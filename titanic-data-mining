@@ -1,0 +1,384 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+
+os.getcwd()
+data_train = pd.read_csv('Desktop/kaggle example/Titanic_data/Train.csv' ,encoding='utf-8')
+data_train.head()
+
+data_train.info()
+#PassengerId => 乘客ID Pclass => 乘客等级(1/2/3等舱位) Name => 乘客姓名 Sex => 性别 Age => 年龄 SibSp => 堂兄弟/妹个数 Parch => 父母与小孩个数 Ticket => 船票信息 Fare => 票价 Cabin => 客舱 Embarked => 登船港口
+
+data_train.describe()
+
+#初步数据探索
+fig = plt.figure()
+fig.set(alpha=0.2)  # 设定图表颜色alpha参数
+
+plt.subplot2grid((2,3),(0,0))             # 在一张大图里分列几个小图
+data_train.Survived.value_counts().plot(kind='bar')# 柱状图 
+plt.title(u"获救情况 (1为获救)") # 标题
+plt.ylabel(u"人数")  
+
+plt.subplot2grid((2,3),(0,1))
+data_train.Pclass.value_counts().plot(kind="bar")
+plt.ylabel(u"人数")
+plt.title(u"乘客等级分布")
+
+plt.subplot2grid((2,3),(0,2))
+plt.scatter(data_train.Survived, data_train.Age)
+plt.ylabel(u"年龄")                         # 设定纵坐标名称
+plt.grid(b=True, which='major', axis='y') ####??????????????
+plt.title(u"按年龄看获救分布 (1为获救)")
+
+
+plt.subplot2grid((2,3),(1,0), colspan=2)
+data_train.Age[data_train.Pclass == 1].plot(kind='kde')   ###从乘客等级为1的所有乘客中的年龄分布
+data_train.Age[data_train.Pclass == 2].plot(kind='kde')
+data_train.Age[data_train.Pclass == 3].plot(kind='kde')
+plt.xlabel(u"年龄")# plots an axis lable
+plt.ylabel(u"密度") 
+plt.title(u"各等级的乘客年龄分布")
+plt.legend((u'头等舱', u'2等舱',u'3等舱'),loc='best') # sets our legend for our graph.
+
+
+plt.subplot2grid((2,3),(1,2))
+data_train.Embarked.value_counts().plot(kind='bar')
+plt.title(u"各登船口岸上船人数")
+plt.ylabel(u"人数")  
+plt.show()
+
+## 属性和获救结果的关联统计
+#看看各乘客等级的获救情况
+fig = plt.figure()
+fig.set(alpha=0.2)  # 设定图表颜色alpha参数
+Survived_0 = data_train.Pclass[data_train.Survived ==0].value_counts()
+Survived_1 = data_train.Pclass[data_train.Survived ==1].value_counts()
+df = pd.DataFrame({u'获救':Survived_1 ,u'为获救':Survived_0})
+df.head()
+df.plot(kind='bar', stacked=True)
+plt.title(u"各乘客等级的获救情况")
+plt.xlabel(u"乘客等级") 
+plt.ylabel(u"人数") 
+plt.show()
+
+##看看个性别的获救情况
+fig = plt.figure()
+fig.set(alpha = 0.2)
+
+Survived_m = data_train.Survived[data_train.Sex =='male'].value_counts()
+Survived_f = data_train.Survived[data_train.Sex =='female'].value_counts()
+df = pd.DataFrame({u'男性':Survived_m , u'女性':Survived_f})
+df.head()
+df.plot(kind='bar', stacked=True)
+plt.title(u"按性别看获救情况")
+plt.xlabel(u"性别") 
+plt.ylabel(u"人数")
+plt.show()
+
+df.plot(kind='bar', stacked=True)
+plt.title(u"按性别看获救情况")
+plt.xlabel(u"性别") 
+plt.ylabel(u"人数")
+plt.show()
+
+## 我们看看各登船港口的获救情况。
+fig = plt.figure()
+fig.set(alpha=0.2)
+
+Survived_0 = data_train.Embarked[data_train.Survived ==0].value_counts()
+Survived_1 = data_train.Embarked[data_train.Survived ==1].value_counts()
+df = pd.DataFrame({u'获救':Survived_1, u'未获救':Survived_0})
+df.plot(kind='bar')
+
+df.plot(kind='bar', stacked=True)
+plt.title(u"各登录港口乘客的获救情况")
+plt.xlabel(u"登录港口") 
+plt.ylabel(u"人数") 
+
+plt.show()
+
+
+## 下面我们来看看 堂兄弟/妹，孩子/父母有几人，对是否获救的影响。
+#g =data_train['PassengerId'].groupby([data_train['SibSp'], data_train['Survived']]).count()  ###建立以两个列为条件的对象
+g = data_train['Survived'].groupby(data_train['SibSp']).value_counts()
+g
+g = data_train['Survived'].groupby(data_train['Parch']).value_counts()
+g
+data_train.Cabin.value_counts()
+
+fig = plt.figure()
+fig.set(alpha=0.2)
+
+Survived_cabin = data_train.Survived[pd.notnull(data_train.Cabin)].value_counts()
+Survived_notcabin = data_train.Survived[pd.isnull(data_train.Cabin)].value_counts()
+
+df =pd.DataFrame({u'有':Survived_cabin, u'无':Survived_notcabin}).transpose()
+df
+'''''''''''''''
+Survived_cabin_ = data_train.Survived[data_train.Cabin.notnull()].value_counts()
+Survived_notcabin_ = data_train.Survived[data_train.Cabin.isnull()].value_counts()
+df_ =pd.DataFrame({u'有':Survived_cabin_, u'无':Survived_notcabin_})
+df_
+''''''''''''''''''
+df.plot(kind='bar', stacked=True)
+plt.title(u"按Cabin有无看获救情况")
+plt.xlabel(u"Cabin有无") 
+plt.ylabel(u"人数")
+plt.show()
+
+#如果缺值的样本占总数比例极高，我们可能就直接舍弃了，作为特征加入的话，可能反倒带入noise，影响最后的结果了
+#如果缺值的样本适中，而该属性非连续值特征属性(比如说类目属性)，那就把NaN作为一个新类别，加到类别特征中
+#如果缺值的样本适中，而该属性为连续值特征属性，有时候我们会考虑给定一个step(比如这里的age，我们可以考虑每隔2/3岁为一个步长)，然后把它离散化，之后把NaN作为一个type加到属性类目中。
+#有些情况下，缺失的值个数并不是特别多，那我们也可以试着根据已有的值，拟合一下数据，补充上。
+#本例中，后两种处理方式应该都是可行的，我们先试试拟合补全吧(虽然说没有特别多的背景可供我们拟合，这不一定是一个多么好的选择)
+
+## 我们这里用scikit-learn中的RandomForest来拟合一下缺失的年龄数据(注：RandomForest是一个用在原始数据中做不同采样，建立多颗DecisionTree，再进行average等等来降低过拟合现象，提高结果的机器学习算法)
+from sklearn.ensemble import RandomForestRegressor
+
+### 使用 RandomForestClassifier 填补缺失的年龄属性
+def set_missing_age(df):
+    # 把已有的数值型特征取出来丢进Random Forest Regressor中
+    age_df = df[['Age','Fare', 'Parch', 'SibSp', 'Pclass']]
+    
+    # 乘客分成已知年龄和未知年龄两部分
+    known_age = age_df[age_df.Age.notnull()].as_matrix()
+    unknown_age = age_df[age_df.Age.isnull()].as_matrix()
+    
+    # y即目标年龄
+    y = known_age[: , 0]
+    
+    # X即特征属性值
+    x = known_age[: ,1:]
+    
+    # fit到RandomForestRegressor之中
+    rfr = RandomForestRegressor(random_state=0,n_estimators = 2000 ,n_jobs=-1)
+    rfr.fit(x ,y)
+    
+    # 用得到的模型进行未知年龄结果预测
+    predictedAge = rfr.predict(unknown_age[: ,1::])
+    
+    df.loc[(df.Age.isnull()) , 'Age'] = predictedAge
+    
+    return df , rfr
+
+def set_Cabin_type(df):
+    df.loc[(df.Cabin.notnull() ,'Cabin')] = "Yes"
+    df.loc[(df.Cabin.isnull() ,'Cabin')] = "No"
+    return df
+
+data_train , rfr = set_missing_age(data_train)
+data_train =     set_Cabin_type(data_train)
+data_train
+
+data_train.info()
+
+## 因为逻辑回归建模时，需要输入的特征都是数值型特征，我们通常会先对类目型的特征因子化。 
+dummies_Cabin = pd.get_dummies(data_train['Cabin'] , prefix = 'Cabin')
+
+dummies_Embarked = pd.get_dummies(data_train['Embarked'] , prefix = 'Embarked')
+
+dummies_Sex = pd.get_dummies(data_train['Sex'] , prefix = 'Sex')
+
+dummies_Pclass = pd.get_dummies(data_train['Pclass'] , prefix = 'Pclass')
+
+df = pd.concat([data_train , dummies_Cabin ,dummies_Embarked ,dummies_Sex ,dummies_Pclass] , axis=1)
+df.drop(['Pclass' , 'Name' ,'Sex' ,'Embarked' ,'Ticket' , 'Cabin' ] ,axis=1 , inplace=True)
+df
+df.info()
+## preprocessing模块对这俩货做一个scaling，所谓scaling，其实就是将一些变化幅度较大的特征化到[-1,1]之内。
+import sklearn.preprocessing as preprocessing
+
+scaler = preprocessing.StandardScaler()
+age_fit_param = scaler.fit(df['Age'])
+df['Age_scaled'] = scaler.transform(df['Age'] , age_fit_param)
+fare_fit_param = scaler.fit(df['Fare'])
+df['Fare_scaled'] = scaler.transform(df['Fare'] ,fare_fit_param)
+
+df
+
+## 我们把需要的feature字段取出来，转成numpy格式，使用scikit-learn中的LogisticRegression建模。
+from sklearn.linear_model import LogisticRegression
+
+# 用正则取出我们要的属性值
+train_df = df.filter(regex = 'Survived|Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+train_np = train_df.as_matrix()
+
+# y即Survival结果
+y = train_np[: ,0]
+
+# X即特征属性值
+X = train_np[: , 1:]
+
+# fit到RandomForestRegressor之中
+clf = LogisticRegression(C = 1.0 ,penalty ='l1' ,tol=1e-6)
+clf.fit(X , y)
+
+clf
+
+## ”test_data”也要做和”train_data”一样的预处理
+data_test = pd.read_csv('Desktop/kaggle example/Titanic_data/Test.csv')
+data_test.loc[ (data_test.Fare.isnull()), 'Fare' ] = 0
+# 接着我们对test_data做和train_data中一致的特征变换
+# 首先用同样的RandomForestRegressor模型填上丢失的年龄
+tmp_df = data_test[['Age','Fare', 'Parch', 'SibSp', 'Pclass']]
+null_age = tmp_df[data_test.Age.isnull()].as_matrix()
+# 根据特征属性X预测年龄并补上
+X = null_age[:, 1:]
+predictedAges = rfr.predict(X)
+data_test.loc[ (data_test.Age.isnull()), 'Age' ] = predictedAges
+
+data_test = set_Cabin_type(data_test)
+dummies_Cabin = pd.get_dummies(data_test['Cabin'], prefix= 'Cabin')
+dummies_Embarked = pd.get_dummies(data_test['Embarked'], prefix= 'Embarked')
+dummies_Sex = pd.get_dummies(data_test['Sex'], prefix= 'Sex')
+dummies_Pclass = pd.get_dummies(data_test['Pclass'], prefix= 'Pclass')
+
+
+df_test = pd.concat([data_test, dummies_Cabin, dummies_Embarked, dummies_Sex, dummies_Pclass], axis=1)
+df_test.drop(['Pclass', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1, inplace=True)
+df_test['Age_scaled'] = scaler.fit_transform(df_test['Age'], age_fit_param)
+df_test['Fare_scaled'] = scaler.fit_transform(df_test['Fare'], fare_fit_param)
+df_test
+test = df_test.filter(regex='Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+predictions = clf.predict(test)
+result = pd.DataFrame({'PassengerId':data_test['PassengerId'].as_matrix(), 'Survived':predictions.astype(np.int32)})
+result.to_csv("Desktop/kaggle example/Titanic_data/predictions/logistic_regression_predictions_01.csv", index=False)
+## 然后，我们想想，年龄的拟合本身也未必是一件非常靠谱的事情，我们依据其余属性，其实并不能很好地拟合预测出未知的年龄。再一个，以我们的日常经验，小盆友和老人可能得到的照顾会多一些，这样看的话，年龄作为一个连续值，给一个固定的系数，应该和年龄是一个正相关或者负相关，似乎体现不出两头受照顾的实际情况，所以，说不定我们把年龄离散化，按区段分作类别属性会更合适一些
+## 老老实实先把得到的model系数和feature关联起来看看。
+list(clf.coef_.T)
+pd.DataFrame({'columns':list(train_df.columns)[1:] ,'coef':list(clf.coef_.T)})
+## 『要做交叉验证(cross validation)!』
+from sklearn.cross_validation import cross_val_score
+
+ #简单看看打分情况
+clf = LogisticRegression(C=1.0 , penalty='l1' , tol =1e-6)
+all_data = df.filter(regex='Survived|Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+X = all_data.as_matrix()[: , 1:]
+y = all_data.as_matrix()[: ,0]
+
+score = cross_val_score(clf , X ,y ,cv=5).mean()
+# 分割数据，按照 训练数据:cv数据 = 7:3的比例
+from sklearn.cross_validation import train_test_split
+split_train , split_cv = train_test_split(df ,test_size=0.3 ,random_state=0)
+train_df = split_train.filter(regex='Survived|Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+# 生成模型
+clf = LogisticRegression(C = 1.0 ,penalty='l1' , tol = 1e-6)
+clf.fit(train_df.as_matrix()[:,1:] ,train_df.as_matrix()[:,0])
+
+## 下面我们做数据分割，并且在原始数据集上瞄一眼bad case：
+# 对cross validation数据进行预测
+cv_df = split_cv.filter(regex='Survived|Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+predictions = clf.predict(cv_df.as_matrix()[:,1:])
+
+origin_data_train = pd.read_csv("Desktop/kaggle example/Titanic_data/train.csv")
+bad_cases = origin_data_train.loc[origin_data_train['PassengerId'].isin(split_cv[predictions !=cv_df.as_matrix()[:,0]]['PassengerId'].values)]
+bad_cases
+from sklearn.grid_search import GridSearchCV
+lr = LogisticRegression(tol=1e-6)
+parameters = {'penalty':('l1' , 'l2') , 'C':[0.5,0.6,0.7,0.8,0.9,1.0]}
+clf_lr = GridSearchCV(lr ,parameters )
+print('开始训练')
+clf_lr.fit(X ,y)
+print('模型训练结束')
+clf_lr
+
+clf_lr_accuracy = clf.score(X ,y)
+print(clf_lr_accuracy)
+
+##（模型融合xgboost，lr , rf）
+import pandas as pd
+import numpy as np
+from xgboost.sklearn import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+import matplotlib.pylab as plt
+import matplotlib.pylab as plt
+%matplotlib inline
+from matplotlib.pylab import rcParams
+rcParams['figure.figsize'] = 12, 4
+from sklearn.cross_validation import StratifiedKFold
+all_data_train = pd.read_csv('Desktop/kaggle example/Titanic_data/all_data_train.csv')
+all_data_test = pd.read_csv('Desktop/kaggle example/Titanic_data/all_data_test.csv')
+print(all_data_train.shape)
+print(all_data_test.shape)
+
+X = all_data_train.as_matrix()[: ,1:]
+y = all_data_train.as_matrix()[: , 0]
+X_submission = all_data_test.as_matrix()[: , :]
+
+np.random.seed(0)  # seed to shuffle the train set
+
+n_folds = 10
+verbose = True
+shuffle = False
+
+if shuffle:
+    idx = np.random.permutation(y.size)
+    X = X[idx]
+    y = y[idx]
+    
+skf = list(StratifiedKFold(y, n_folds))
+
+
+clfs = [RandomForestClassifier(n_estimators=10,max_depth=9,min_samples_split=5,min_samples_leaf=10,max_features=5,oob_score=True , random_state =10),
+        LogisticRegression(tol=1e-6,C=0.4,penalty='l2'),
+        XGBClassifier(
+            learning_rate=0.1,
+            n_estimators =205,
+            max_depth=6,
+            min_child_weight =6,
+            gamma = 0,
+            subsample=0.9,
+            colsample_bytree = 0.8,
+            reg_alpha = 0.01,
+            objective ='binary:logistic' ,
+            nthread=4,
+            scale_pos_weight=1,
+            seed = 27
+            )
+       ]
+print('为模型Blending创造训练集，测试集')
+
+dataset_blend_train = np.zeros((X.shape[0], len(clfs)))
+dataset_blend_test = np.zeros((X_submission.shape[0], len(clfs)))
+
+for j, clf in enumerate(clfs):
+        print j, clf
+        dataset_blend_test_j = np.zeros((X_submission.shape[0], len(skf)))
+        for i, (train, test) in enumerate(skf):
+            print "Fold", i
+            X_train = X[train]
+            y_train = y[train]
+            X_test = X[test]
+            y_test = y[test]
+            clf.fit(X_train, y_train)
+            y_submission = clf.predict_proba(X_test)[:, 1]
+            dataset_blend_train[test, j] = y_submission
+            dataset_blend_test_j[:, i] = clf.predict_proba(X_submission)[:, 1]
+        dataset_blend_test[:, j] = dataset_blend_test_j.mean(1)
+        
+print('训练集，测试集计算完成')
+
+clf = LogisticRegression()
+clf.fit(dataset_blend_train, y)
+y_submission = clf.predict_proba(dataset_blend_test)[:, 1]
+print('y_submission样子是：',y_submission.shape)
+
+print('Linear stretch of predictions to [0,1]')
+y_submission = (y_submission - y_submission.min()) / (y_submission.max() - y_submission.min())
+
+print('保存结果')
+print(y_submission.shape)
+
+from sklearn import cross_validation, metrics
+y_predprob = clf.predict_proba(dataset_blend_train)[:,1]
+print('AUC Score(Train): %f'%metrics.roc_auc_score(y , y_predprob))
+y_accuracy = clf.score(dataset_blend_train ,y)
+y_accuracy
+data_test = pd.read_csv('Desktop/kaggle example/Titanic_data/Test.csv')
+## 保存预测结果
+result = pd.DataFrame({'PassengerId':data_test['PassengerId'].as_matrix() , 'Survived':y_submission})
+result['Survived'] = result['Survived'].apply(lambda x : 1 if x>=0.5 else 0)
+result.to_csv('Desktop/kaggle example/Titanic_data/result0.csv' ,index=False)
