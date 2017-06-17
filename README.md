@@ -11,12 +11,15 @@
  - 关联分析
  
  - 年龄拟合填充，或者年龄离散化，将缺失年龄另设置为一类
+ - 特征工程
  
  - 将training-data和testing-data都做同样的数据预处理并保存
  
 
 数据建模
 ----
-模型选择：LR 、RandomForest 、Xgboost
-超参数选择：网格搜索
-模型融合：Blending
+
+ - 模型选择：LR 、RandomForest 、Xgboost 
+ - 超参数调整：网格搜索
+ - 模型融合：Blending
+
